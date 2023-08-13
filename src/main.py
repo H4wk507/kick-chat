@@ -9,7 +9,6 @@ def main(argv) -> int:
         return 1
     client = Client(username=argv[1])
     client.listen()
-    print(1)
     return 0
 
 
