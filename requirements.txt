@@ -1,0 +1,7 @@
+cffi==1.15.1
+curl-cffi==0.5.7
+pycparser==2.21
+python-dateutil==2.8.2
+rel==0.4.9
+six==1.16.0
+websocket-client==1.6.1
