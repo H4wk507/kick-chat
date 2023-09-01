@@ -1,12 +1,15 @@
 import json
+import os
+import sys
 
 import rel
 import websocket
 from curl_cffi import requests
 from dateutil.parser import parse
 
-from constants import RESET, SOCKET_URL
-from utils import hex_to_rgb
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from kick_chat.constants import RESET, SOCKET_URL
+from kick_chat.utils import hex_to_rgb
 
 
 class Client:
@@ -18,6 +21,7 @@ class Client:
             f"https://kick.com/api/v1/channels/{username}",
             impersonate="chrome110",
         )
+        res.raise_for_status()
         data = res.json()
         return data["chatroom"]["id"]
 
