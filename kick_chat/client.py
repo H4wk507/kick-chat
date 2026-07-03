@@ -9,12 +9,18 @@ from dateutil.parser import parse
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from kick_chat.constants import RESET, SOCKET_URL
-from kick_chat.utils import hex_to_rgb
+from kick_chat.utils import (
+    EmoteCache,
+    hex_to_rgb,
+    iter_message_parts,
+    render_badges,
+)
 
 
 class Client:
     def __init__(self, *, username: str):
         self.chatroom_id = self.username_to_id(username)
+        self.emotes = EmoteCache()
 
     def username_to_id(self, username: str) -> int:
         res = requests.get(
@@ -42,11 +48,18 @@ class Client:
         time = (
             parse(data["created_at"]).astimezone(tz=None).strftime("%H:%M:%S")
         )
-        message = data["content"]
         user = data["sender"]["username"]
-        r, g, b = hex_to_rgb(data["sender"]["identity"]["color"])
+        identity = data["sender"]["identity"]
+        r, g, b = hex_to_rgb(identity["color"])
         fgColorString = f"\033[38;2;{r};{g};{b}m"
-        print(f"[{time}] {fgColorString}{user}{RESET}: {message}")
+        badges = render_badges(identity.get("badges", []))
+        message = "".join(
+            part[1]
+            if part[0] == "text"
+            else self.emotes.render(part[1], part[2])
+            for part in iter_message_parts(data["content"])
+        )
+        print(f"[{time}] {badges}{fgColorString}{user}{RESET}: {message}")
 
     def on_message(self, ws, message):
         res = json.loads(message)
