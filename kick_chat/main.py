@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from kick_chat.client import Client
 
 
-def main(argv=sys.argv) -> int:
+def main(argv: list[str] = sys.argv) -> int:
     if len(argv) != 2:
         print("Usage: kick-chat <channel_name>")
         return 1

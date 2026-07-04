@@ -1,11 +1,11 @@
 import json
 import os
 import sys
+from datetime import datetime
+from typing import Any
 
-import rel
 import websocket
 from curl_cffi import requests
-from dateutil.parser import parse
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from kick_chat.constants import RESET, SOCKET_URL
@@ -23,9 +23,9 @@ class Client:
         )
         res.raise_for_status()
         data = res.json()
-        return data["chatroom"]["id"]
+        return int(data["chatroom"]["id"])
 
-    def subscribe(self, ws):
+    def subscribe(self, ws: websocket.WebSocketApp) -> None:
         ws.send(
             json.dumps(
                 {
@@ -38,17 +38,15 @@ class Client:
             )
         )
 
-    def messageEvent(self, ws, data):
-        time = (
-            parse(data["created_at"]).astimezone(tz=None).strftime("%H:%M:%S")
-        )
+    def messageEvent(self, _ws: websocket.WebSocketApp, data: dict[str, Any]) -> None:
+        time = datetime.fromisoformat(data["created_at"]).astimezone(tz=None).strftime("%H:%M:%S")
         message = data["content"]
         user = data["sender"]["username"]
         r, g, b = hex_to_rgb(data["sender"]["identity"]["color"])
         fgColorString = f"\033[38;2;{r};{g};{b}m"
         print(f"[{time}] {fgColorString}{user}{RESET}: {message}")
 
-    def on_message(self, ws, message):
+    def on_message(self, ws: websocket.WebSocketApp, message: str) -> None:
         res = json.loads(message)
         match res["event"]:
             case "pusher:connection_established":
@@ -59,15 +57,13 @@ class Client:
                 data = json.loads(res["data"])
                 self.messageEvent(ws, data)
 
-    def on_open(self, ws):
+    def on_open(self, _ws: websocket.WebSocketApp) -> None:
         print("Connected ...")
 
-    def listen(self):
+    def listen(self) -> None:
         ws = websocket.WebSocketApp(
             SOCKET_URL,
             on_open=self.on_open,
             on_message=self.on_message,
         )
-        ws.run_forever(dispatcher=rel, reconnect=5)
-        rel.signal(2, rel.abort)
-        rel.dispatch()
+        ws.run_forever(reconnect=5)
